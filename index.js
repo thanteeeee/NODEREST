@@ -1,17 +1,17 @@
-//Description : CRUF Book No DB
+//Description: CRUD Book No DB
 //npm install express
-//Run this file with node CRUDBookNoDB.js
-
+//Run this file with node CRUBBookNoDB.js
+//Test with Postman
 require("dotenv").config();
 const express = require('express');
+const { title } = require("process");
 const app = express();
 
 //parse incoming requests
 app.use(express.json());
 
 //sample data
-let book = [
-    {
+let books = [{
         id: 1,
         title: 'Book 1',
         author: 'Author 1'
@@ -24,49 +24,50 @@ let book = [
     {
         id: 3,
         title: 'Book 3',
-        author: 'Author 3'
+        author: 'Author 3' 
     }
 ];
 
-//route ot get all books
-app.get('/book',(req, res) => {
+//route to get all books
+app.get('/books', (req, res) => {
     res.json(books);
 });
 
-// route to get a book by id
-app.get('/book/:id', (req,res) => {
+//route to get a book by id
+app.get('/books', (req, res) => {
     const book = books.find(b => b.id === parseInt(req.params.id));
-    if(!book) res.status(404).send('Book not found');
-    res.json(book); 
+    if (!book) res.status(404).send('Book not found');
+    res.json(book);
 });
 
-// route to create a new book 
-app.post('/book', (req, res) => {
+//route to create a new book
+app.post('/books', (req, res) => {
     const book = {
-        id: books.length +1 ,
-        title: req.body.title,author: req.body.author
+        id: books.length + 1,
+        title: req.body.title,
+        author: req.body.author
     };
     books.push(book);
     res.send(book);
 });
 
-//route to update a book
-app.put('/book/: id', (req, res) => {
+//route to update a book 
+app.put('/books/:id', (req, res) => {
     const book = books.find(b => b.id === parseInt(req.params.id));
-    if(!book) res.status(404).sendFile('Book not found');
-    book.title= req.body.title;
-    book.author = req.body.aythor;
+    if (!book) res.status(404).send('Book not found');
+    book.title = req.body.title;
+    book.author = req.body.author;
     res.send(book);
 });
 
 //route to delete a book
-app.delete('/book/:id', (req,res) => {
+app.delete('/books/:id', (req, res) => {
     const book = books.find(b => b.id === parseInt(req.params.id));
-    if(!book) res.status(404).send('Book not found');
+    if (!book) res.status(404).send('Book not found');
     const index = books.indexOf(book);
     books.splice(index, 1);
     res.send(book);
 });
 
-const port = process.env.PORt || 3000;
-console.log(`Example app listening at http://localhost:${port}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))

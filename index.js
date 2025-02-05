@@ -1,42 +1,48 @@
-//SQLite3 CRUD operation
-//npm install sqlite3
-//Create a Bood.sqlite file in Database folder 
-//Run this file with file in Database folder
-//Run this file with node CRUDBookSQLite.js
-//Test with Postman
+// SQLite3 CRUD operations
+// npm install sqlite3
+// Create a Book.sqlite file in Database folder
+// Run this file with node CRUDBookSQLite.js
+// Test with Postman
 
 require("dotenv").config();
 
-
 const express = require('express');
 const sqlite3 = require('sqlite3');
-const qpp = express();
+const app = express();
 
-//connext to database
-const db = new sqlite3.Database('/Database/Book.sqlite');
+// connect to database
+const db = new sqlite3.Database('./Database/Book.sqlite');
 
-//parse incoming requests
+// parse incoming requests
 app.use(express.json());
 
-//create books table if it doesn't exist
+// create books table if it doesn't exist
 db.run(`CREATE TABLE IF NOT EXISTS books (
     id INTEGER PRIMARY KEY,
     title TEXT,
     author TEXT
 )`);
 
-//route to get all book
-app.get('/books',(req,res) => {
-    db.get('SELECT * FROM books WHERE id = ?',req.params.id,(err, row) => {
-        if(err){
+// route to get all books
+app.get('/books', (req, res) => {
+    db.all('SELECT * FROM books', (err, rows) => {
+        if (err) {
             res.status(500).send(err);
-        }else{
-            if(!row){
-                res.status(404).send('Bok=ok not found');
-            }
-            else{
-                res.json(row);
-            }
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+// route to get a book by id
+app.get('/books/:id', (req, res) => {
+    db.get('SELECT * FROM books WHERE id = ?', req.params.id, (err, row) => {
+        if (err) {
+            res.status(500).send(err);
+        } else if (!row) {
+            res.status(404).send('Book not found');
+        } else {
+            res.json(row);
         }
     });
 });
@@ -79,4 +85,3 @@ app.delete('/books/:id', (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
-

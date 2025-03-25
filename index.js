@@ -1,71 +1,89 @@
-// Description: REST API with MongoDB
-// npm install express mongoose
-// Run this file with node index.js
+// SQLite3 CRUD operations
+// npm install sqlite3
+// Create a Book.sqlite file in Database folder
+// Run this file with node CRUDBookSQLite.js
 // Test with Postman
 
+require("dotenv").config();
+
 const express = require('express');
-const mongoose = require('mongoose');
+const sqlite3 = require('sqlite3');
 const app = express();
+
+// connect to database
+const db = new sqlite3.Database('./Database/Book.sqlite');
+
+// parse incoming requests
 app.use(express.json());
 
-// Connect to the MongoDB database
-mongoose.connect('mongodb://admin:HLPfyq50636@node71568-node30037js.proen.app.ruk-com.cloud:27017', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-// Define the book model
-const bookSchema = new mongoose.Schema({
-  id : Number,
-  title: String,
-  author: String
+// create books table if it doesn't exist
+db.run(`CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    author TEXT
+)`);
+
+// route to get all books
+app.get('/books', (req, res) => {
+    db.all('SELECT * FROM books', (err, rows) => {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.json(rows);
+        }
+    });
 });
 
-const Book = mongoose.model('Book', bookSchema);
+// route to get a book by id
+app.get('/books/:id', (req, res) => {
+    db.get('SELECT * FROM books WHERE id = ?', req.params.id, (err, row) => {
+        if (err) {
+            res.status(500).send(err);
+        } else if (!row) {
+            res.status(404).send('Book not found');
+        } else {
+            res.json(row);
+        }
+    });
+});
 
-// API routes
-// Create a new book with auto-increase id 1,2,3,4,5...
-app.post('/books', async (req, res) => {
-  const lastBook = await Book.findOne().sort({ id: -1 });
-  const newId = lastBook ? lastBook.id + 1 : 1;
-  const book = new Book({
-    id: newId,
-    title: req.body.title,
-    author: req.body.author
+// route to create a new book
+app.post('/books', (req, res) => {
+    const book = req.body;
+    db.run('INSERT INTO books (title, author) VALUES (?, ?)', book.title, book.author, function(err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            book.id = this.lastID;
+            res.send(book);
+        }
+    });
+});
+
+// route to update a book
+app.put('/books/:id', (req, res) => {
+    const book = req.body;
+    db.run('UPDATE books SET title = ?, author = ? WHERE id = ?', book.title, book.author, req.params.id, function(err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.send(book);
+        }
+    });
+});
+
+// route to delete a book
+app.delete('/books/:id', (req, res) => {
+    db.run('DELETE FROM books WHERE id = ?', req.params.id, function(err) {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.send({});
+        }
+    });
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Example app listening at http://localhost:${port}`);
   });
-  await book.save();
-  res.send(book);
-}
-);
-
-// route /books will be used to get all books
-// Get a list of all books
-app.get('/books', async (req, res) => {
-  const books = await Book.find();
-  res.send(books);
-});
-
-// Get a single book by id
-app.get('/books/:id', async (req, res) => {
-  const book = await Book.findOne({ id: req.params.id });
-  res.send(book);
-});
-
-// Update a book
-app.put('/books/:id', async (req, res) => {
-  const book = await Book.findOne({ id: req.params.id });
-  book.title = req.body.title;
-  book.author = req.body.author;
-  await book.save();
-  res.send(book);
-});
-
-// Delete a book
-app.delete('/books/:id', async (req, res) => {
-  const result = await Book.deleteOne({ id: req.params.id });
-  res.send(result);
-});
-
-
-app.listen(5000, () => {
-  console.log('API server is listening on port 5000');
-});
